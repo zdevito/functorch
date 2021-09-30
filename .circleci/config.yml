@@ -85,6 +85,8 @@ jobs:
           command: .circleci/unittest/linux/scripts/post_process.sh
       - store_test_results:
           path: test-results
+      - store_artifacts:
+          path: test-results
 
   unittest_linux_gpu:
     <<: *binary_common
@@ -122,6 +124,8 @@ jobs:
           name: Post process
           command: .circleci/unittest/linux/scripts/post_process.sh
       - store_test_results:
+          path: test-results
+      - store_artifacts:
           path: test-results
 
 workflows:
