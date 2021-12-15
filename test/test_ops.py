@@ -476,7 +476,6 @@ class TestOperators(TestCase):
         xfail('double', 'channels_last'),
         xfail('nn.functional.gaussian_nll_loss'),
         xfail('nn.functional.poisson_nll_loss'),
-        xfail('nn.functional.conv1d', device_type='cuda'),
         xfail('fft.rfft2'),
         xfail('lu'),
         skip('qr'),  # Nondetermistic
@@ -906,6 +905,229 @@ class TestOperators(TestCase):
                 expected_vjps = vjp_fn(cotangents)
 
                 self.assertEqual(result_vjps, expected_vjps)
+
+    @ops(functorch_lagging_op_db + additional_op_db, allowed_dtypes=(torch.float,))
+    @skipOps('TestOperators', 'test_jvpvjp', vjp_fail.union({
+        # All of the following cause CUDA asserts; need investigation
+        skip('div', 'floor_rounding', device_type='cuda'),
+        skip('div', 'no_rounding_mode', device_type='cuda'),
+        skip('div', 'trunc_rounding', device_type='cuda'),
+        skip('true_divide', device_type='cuda'),
+        skip('cumulative_trapezoid', device_type='cuda'),
+        skip('gather', device_type='cuda'),
+        skip('gradient', device_type='cuda'),
+        skip('special.ndtri', device_type='cuda'),
+        skip('special.ndtr', device_type='cuda'),
+        skip('trapezoid', device_type='cuda'),
+        skip('trapz', device_type='cuda'),
+
+        # The following are failures. PyTorch doesn't have a lot of forward-mode AD support.
+        xfail('__getitem__'),
+        xfail('__rmatmul__'),
+        xfail('_masked.amax'),
+        xfail('_masked.amin'),
+        xfail('_masked.log_softmax'),
+        xfail('_masked.mean'),
+        xfail('_masked.norm'),
+        xfail('_masked.normalize'),
+        xfail('_masked.prod'),
+        xfail('_masked.softmax'),
+        xfail('_masked.softmin'),
+        xfail('_masked.sum'),
+        xfail('_masked.var'),
+        xfail('addmv'),
+        xfail('addr'),
+        xfail('as_strided'),
+        xfail('block_diag'),
+        xfail('cdist'),
+        xfail('clamp'),
+        xfail('clamp', 'scalar'),
+        xfail('corrcoef'),
+        xfail('cummax'),
+        xfail('cummin'),
+        xfail('cumulative_trapezoid', device_type='cpu'),
+        xfail('diff'),
+        xfail('dsplit'),
+        xfail('fft.fft'),
+        xfail('fft.fft2'),
+        xfail('fft.fftn'),
+        xfail('fft.hfft'),
+        xfail('fft.hfft2'),
+        xfail('fft.hfftn'),
+        xfail('fft.ifft'),
+        xfail('fft.ifft2'),
+        xfail('fft.ifftn'),
+        xfail('fft.ihfft'),
+        xfail('fft.ihfft2'),
+        xfail('fft.ihfftn'),
+        xfail('fft.irfft'),
+        xfail('fft.irfft2'),
+        xfail('fft.irfftn'),
+        xfail('fft.rfft'),
+        xfail('fft.rfft2'),
+        xfail('fft.rfftn'),
+        xfail('float_power'),
+        xfail('gather', device_type='cpu'),
+        xfail('gradient', device_type='cpu'),
+        xfail('hsplit'),
+        xfail('index_select'),
+        xfail('istft'),
+        xfail('linalg.cond'),
+        xfail('linalg.svd'),
+        xfail('log_softmax'),
+        xfail('log_softmax', 'dtype'),
+        xfail('logcumsumexp'),
+        xfail('logit'),
+        xfail('masked_fill'),
+        xfail('masked_select'),
+        xfail('matmul'),
+        xfail('max', 'binary'),
+        xfail('max', 'reduction_no_dim', device_type='cpu'),
+        xfail('maximum'),
+        xfail('median', device_type='cpu'),
+        xfail('min', 'binary'),
+        xfail('min', 'reduction_no_dim', device_type='cpu'),
+        xfail('minimum'),
+        xfail('mv'),
+        xfail('nanmedian', device_type='cpu'),
+        xfail('nanquantile'),
+        xfail('narrow'),
+        xfail('nn.functional.adaptive_avg_pool1d'),
+        xfail('nn.functional.adaptive_avg_pool2d'),
+        xfail('nn.functional.adaptive_avg_pool3d'),
+        xfail('nn.functional.adaptive_max_pool1d'),
+        xfail('nn.functional.adaptive_max_pool2d'),
+        xfail('nn.functional.adaptive_max_pool3d'),
+        xfail('nn.functional.avg_pool1d'),
+        xfail('nn.functional.avg_pool2d'),
+        xfail('nn.functional.avg_pool3d'),
+        xfail('nn.functional.batch_norm'),
+        xfail('nn.functional.batch_norm', 'without_cudnn', device_type='cuda'),
+        xfail('nn.functional.bilinear'),
+        xfail('nn.functional.celu'),
+        xfail('nn.functional.conv1d'),
+        xfail('nn.functional.conv2d'),
+        xfail('nn.functional.conv2d', 'no_bias'),
+        xfail('nn.functional.conv2d', 'stride_depthwise_with_bias'),
+        xfail('nn.functional.conv2d', 'stride_groups_with_bias'),
+        xfail('nn.functional.conv2d', 'stride_no_bias'),
+        xfail('nn.functional.conv2d', 'stride_padding_no_bias'),
+        xfail('nn.functional.conv2d', 'stride_padding_with_bias'),
+        xfail('nn.functional.conv2d', 'stride_with_bias'),
+        xfail('nn.functional.conv2d', 'strided_padding_dilation_no_bias'),
+        xfail('nn.functional.conv2d', 'strided_padding_dilation_with_bias'),
+        xfail('nn.functional.conv2d', 'with_bias'),
+        xfail('nn.functional.conv_transpose1d'),
+        xfail('nn.functional.conv_transpose2d'),
+        xfail('nn.functional.conv_transpose3d'),
+        xfail('nn.functional.cosine_embedding_loss'),
+        xfail('nn.functional.cosine_similarity'),
+        xfail('nn.functional.cross_entropy'),
+        xfail('nn.functional.cross_entropy', 'mean'),
+        xfail('nn.functional.cross_entropy', 'none'),
+        xfail('nn.functional.cross_entropy', 'sum'),
+        xfail('nn.functional.elu'),
+        xfail('nn.functional.embedding'),
+        xfail('nn.functional.embedding_bag'),
+        xfail('nn.functional.glu'),
+        xfail('nn.functional.grid_sample'),
+        xfail('nn.functional.hardshrink'),
+        xfail('nn.functional.hardsigmoid'),
+        xfail('nn.functional.hardswish'),
+        xfail('nn.functional.hardtanh'),
+        xfail('nn.functional.hinge_embedding_loss'),
+        xfail('nn.functional.huber_loss'),
+        xfail('nn.functional.instance_norm'),
+        xfail('nn.functional.interpolate', 'area'),
+        xfail('nn.functional.interpolate', 'bicubic'),
+        xfail('nn.functional.interpolate', 'bilinear'),
+        xfail('nn.functional.interpolate', 'linear'),
+        xfail('nn.functional.interpolate', 'nearest'),
+        xfail('nn.functional.interpolate', 'trilinear'),
+        xfail('nn.functional.layer_norm'),
+        xfail('nn.functional.leaky_relu'),
+        xfail('nn.functional.local_response_norm'),
+        xfail('nn.functional.logsigmoid'),
+        xfail('nn.functional.max_pool1d'),
+        xfail('nn.functional.max_pool2d'),
+        xfail('nn.functional.max_pool3d'),
+        xfail('nn.functional.mse_loss'),
+        xfail('nn.functional.nll_loss'),
+        xfail('nn.functional.normalize'),
+        xfail('nn.functional.pad', 'circular'),
+        xfail('nn.functional.pad', 'constant'),
+        xfail('nn.functional.pad', 'reflect'),
+        xfail('nn.functional.pad', 'replicate'),
+        xfail('nn.functional.prelu'),
+        xfail('nn.functional.relu6'),
+        xfail('nn.functional.selu'),
+        xfail('nn.functional.softmin'),
+        xfail('nn.functional.softmin', 'with_dtype'),
+        xfail('nn.functional.softplus'),
+        xfail('nn.functional.softshrink'),
+        xfail('nn.functional.tanhshrink'),
+        xfail('nn.functional.unfold'),
+        xfail('nn.functional.upsample_bilinear'),
+        xfail('nn.functional.upsample_nearest'),
+        xfail('pow'),
+        xfail('put'),
+        xfail('quantile'),
+        xfail('renorm'),
+        xfail('repeat_interleave'),
+        xfail('sigmoid'),
+        xfail('sinc'),
+        xfail('softmax'),
+        xfail('softmax', 'with_dtype'),
+        xfail('stft'),
+        xfail('svd'),
+        xfail('take'),
+        xfail('take_along_dim'),
+        xfail('tanh'),
+        xfail('trace'),
+        xfail('trapezoid', device_type='cpu'),
+        xfail('trapz', device_type='cpu'),
+        xfail('unfold'),
+        xfail('vsplit'),
+        xfail('where'),
+    }))
+    def test_jvpvjp(self, device, dtype, op):
+        if not op.supports_autograd:
+            self.skipTest("Skipped! Autograd not supported.")
+            return
+
+        samples = op.sample_inputs(device, dtype, requires_grad=True)
+
+        # TODO: test in-place
+        if is_inplace(op, op.get_op()):
+            self.skipTest("Skipped! NYI: inplace-testing not supported.")
+            return
+
+        for sample in samples:
+            fn, primals = normalize_op_input_output(op, sample)
+            result = fn(*primals)
+            cotangents = tree_map(lambda x: torch.randn_like(x), result)
+            tangents = tree_map(lambda x: torch.randn_like(x), result)
+
+            _, vjp_fn = vjp(fn, *primals)
+            result = jvp(vjp_fn, (cotangents,), (tangents,))
+            self.assertEqual(len(result), 2)
+
+            def reference(primals, cotangents, tangents):
+                _, vjp_fn = ref_vjp(fn, *primals)
+                with fwAD.dual_level():
+                    flat_cotangents, spec = tree_flatten(cotangents)
+                    flat_tangents, spec = tree_flatten(tangents)
+                    flat_duals = [fwAD.make_dual(c, t) for c, t in zip(flat_cotangents, flat_tangents)]
+                    duals = tree_unflatten(flat_duals, spec)
+                    result = vjp_fn(duals)
+                    flat_result, spec = tree_flatten(result)
+                    primals_out, tangents_out = zip(*[fwAD.unpack_dual(r) for r in flat_result])
+                    tangents_out = [t if t is not None else torch.zeros_like(p) for p, t in zip(primals_out, tangents_out)]
+                    expected = (tree_unflatten(primals_out, spec), tree_unflatten(tangents_out, spec))
+                return expected
+
+            expected = reference(primals, cotangents, tangents)
+            self.assertEqual(result, expected)
 
 class InplaceError(Exception):
     def __repr__(self):
