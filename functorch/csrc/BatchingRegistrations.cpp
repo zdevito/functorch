@@ -830,25 +830,6 @@ TORCH_LIBRARY_IMPL(_, FT_BATCHED_KEY, m) {
   m.fallback(torch::CppFunction::makeFromBoxedFunction<&batchedTensorForLoopFallback>());
 }
 
-Tensor& copy_batched_tensor_(Tensor& self, const Tensor& src, bool non_blocking) {
-  const auto* self_impl = maybeGetBatchedImpl(self);
-  const auto* src_impl = maybeGetBatchedImpl(src);
-  if (!self_impl || !src_impl) {
-    TORCH_WARN("The functionalization pass encountered a function that mutated its inputs \
-                and it was unable to preserve the mutations. Inputs to the function \
-                will not be mutated");
-  }
-  auto self_vmap_levels = createVmapLevelsBitset(self_impl->bdims());
-  auto other_vmap_levels = createVmapLevelsBitset(src_impl->bdims());
-  if (self_vmap_levels != (self_vmap_levels | other_vmap_levels)) {
-    TORCH_WARN("The functionalization pass encountered a function that mutated its inputs \
-                and it was unable to preserve the mutations. Inputs to the function \
-                will not be mutated");
-    return self;
-  }
-  return self_impl->value().copy_(src_impl->value(), non_blocking);
-}
-
 TORCH_LIBRARY_IMPL(aten, FT_BATCHED_KEY, m) {
   // VMAP_OUTPLACE_OP("abs", abs_batch_rule);
   // m.impl("abs", PrimBatchRule7<decltype(&abs_batch_rule), &abs_batch_rule, to_operator_t<decltype(abs_batch_rule)>>::apply);
@@ -956,9 +937,6 @@ TORCH_LIBRARY_IMPL(aten, FT_BATCHED_KEY, m) {
 // //   m.impl("new_zeros", new_zeros_batching_rule);
 // //
   m.impl("contiguous", contiguous_batching_rule);
-  // In order to preserve semantics for functions that mutate inputs,
-  // an input batched tensor needs to know one mutate operation: copy_.
-  m.impl("copy_", copy_batched_tensor_);
 }
 
 }
