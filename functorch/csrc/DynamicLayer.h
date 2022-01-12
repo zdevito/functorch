@@ -17,6 +17,22 @@ namespace c10 { struct AutogradMetaInterface; }
 namespace at {
 namespace functorch {
 
+// RAII utility for modifying pytorch TLS.
+// (Maybe this should go in core at some point)
+struct ForceLocalDispatchKeySet {
+ public:
+  ForceLocalDispatchKeySet(c10::impl::LocalDispatchKeySet key_set) :
+      saved_keyset_(c10::impl::tls_local_dispatch_key_set()) {
+    c10::impl::_force_tls_local_dispatch_key_set(key_set);
+  }
+  ~ForceLocalDispatchKeySet() {
+    c10::impl::_force_tls_local_dispatch_key_set(saved_keyset_);
+  }
+
+ private:
+  c10::impl::LocalDispatchKeySet saved_keyset_;
+};
+
 struct TORCH_API DynamicLayer {
   explicit DynamicLayer(
       DispatchKey key,
