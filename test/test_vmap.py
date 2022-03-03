@@ -9,7 +9,7 @@ from unittest.case import skipIf, skip
 from torch.testing._internal.common_utils import TestCase, run_tests
 import torch
 import torch.nn.functional as F
-from torch import Tensor
+from torch import Tensor, bernoulli, binomial
 import functools
 import itertools
 import warnings
@@ -2636,22 +2636,10 @@ class TestVmapOperators(Namespace.TestVmapBase):
 
         random_ops = [
             # out-of-place on BatchedTensor
-            (torch.bernoulli, (torch.rand(B0, 1),)),
-            (lambda t: torch.bernoulli(t, p=0.5), (torch.rand(B0, 1),)),
-            (lambda t: torch.multinomial(t, 2), (torch.rand(B0, 3),)),
-            (torch.poisson, (torch.rand(B0, 1),)),
-            # (torch.rand_like, (torch.rand(B0, 1),)),
-            # (torch.randn_like, (torch.rand(B0, 1),)),
             (lambda t: torch.randint_like(t, 2), (torch.rand(B0, 1),)),
             (lambda t: torch.randint_like(t, 0, 2), (torch.rand(B0, 1),)),
 
             # out-of-place on captured tensor
-            (lambda t: torch.bernoulli(captured), (torch.rand(B0),)),
-            (lambda t: torch.bernoulli(captured, p=0.5), (torch.rand(B0),)),
-            (lambda t: torch.multinomial(captured, 2), (torch.rand(B0),)),
-            (lambda t: torch.poisson(captured), (torch.rand(B0),)),
-            # (lambda t: torch.rand_like(captured), (torch.rand(B0),)),
-            # (lambda t: torch.randn_like(captured) , (torch.rand(B0),)),
             (lambda t: torch.randint_like(captured, 2), (torch.rand(B0),)),
             (lambda t: torch.randint_like(captured, 0, 2), (torch.rand(B0),)),
 
@@ -3625,6 +3613,10 @@ class TestVmapOperatorsOpInfo(TestCase):
             lambda _, t: torch.normal(t, 1., **kwargs),
             lambda _, t: torch.normal(0., torch.abs(t), **kwargs),
             lambda _, t: torch.normal(t, torch.abs(t), **kwargs),
+            lambda _, t: torch.bernoulli(torch.abs(t).clamp(max=1), **kwargs),
+            lambda _, t: torch.poisson(torch.abs(t), **kwargs),
+            lambda _, t: torch.binomial(t, t, **kwargs),
+            lambda _, t: torch.multinomial(torch.abs(t), 4, **kwargs),
         ]
 
         B0 = 4
