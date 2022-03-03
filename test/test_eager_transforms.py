@@ -15,15 +15,14 @@ import unittest
 import warnings
 import math
 from torch.testing._internal.common_device_type import instantiate_device_type_tests, onlyCPU
-from functorch.experimental.batch_norm_replacement import replace_all_batch_norm_modules
 from torch.testing._internal.common_dtype import get_all_fp_dtypes
 from functools import partial
 from functorch.experimental import copy_and_replace_all_batch_norm_modules, replace_all_batch_norm_modules
 
 import functorch
 from functorch import (
-    grad, vjp, vmap, jacrev, jacfwd, grad_and_value,
-    make_functional, make_functional_with_buffers,
+    grad, vjp, vmap, jacrev, jacfwd, grad_and_value, hessian,
+    jvp, make_functional, make_functional_with_buffers,
 )
 from functorch._src.make_functional import (
     functional_init, functional_init_with_buffers,
@@ -2108,17 +2107,18 @@ class TestExamplesCorrectness(TestCase):
         n_inner_iter = 2
         num_tasks = 2
 
+        # real example uses batch norm but it's numerically unstable in the first iteration, when near 0
         net = nn.Sequential(
             nn.Conv2d(1, 64, 3),
-            nn.BatchNorm2d(64, momentum=1, affine=True, track_running_stats=False),
+            nn.GroupNorm(64, 32, affine=True),
             nn.ReLU(inplace=inplace_relu),
             nn.MaxPool2d(2, 2),
             nn.Conv2d(64, 64, 3),
-            nn.BatchNorm2d(64, momentum=1, affine=True, track_running_stats=False),
+            nn.GroupNorm(64, 32, affine=True),
             nn.ReLU(inplace=inplace_relu),
             nn.MaxPool2d(2, 2),
             nn.Conv2d(64, 64, 3),
-            nn.BatchNorm2d(64, momentum=1, affine=True, track_running_stats=False),
+            nn.GroupNorm(64, 32, affine=True),
             nn.ReLU(inplace=inplace_relu),
             nn.MaxPool2d(2, 2),
             nn.Flatten(),
